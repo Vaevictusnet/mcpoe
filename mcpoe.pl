@@ -95,6 +95,7 @@ POE::Component::Client::TCP->new(
     debug(1,"connected...");
     $_[HEAP]->{packetbuffer} = [];
     $_[KERNEL]->yield('handshake');
+    $_[KERNEL]->delay('send_keepalive',10);
   },
   ConnectError => sub { print "could not connect ... \n"; },
   ServerInput => sub {
