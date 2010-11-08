@@ -828,8 +828,8 @@ sub mcFloat
 sub mcLong
 {
   my $input = shift;
-  return pack("q>",$input);
-  #return pack("N2",$input);
+  #return pack("q>",$input);
+  return pack("N2",$input);
 }
 
 sub mcInt
