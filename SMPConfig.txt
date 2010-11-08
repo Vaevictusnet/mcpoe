@@ -9,6 +9,7 @@ sub get
     username => 'User',
     password => 'Pass',
     host => 'localhost',
+    owner => 'MyOwnerAcct',
     port => 25565
   };
 }

@@ -48,6 +48,7 @@ my $tickspeed= 0.1;
 my $software_version=12;
 my $protocol_version=3;
 my $movecount = 0;
+my $alive = 1;
 my $agent_header="Java/1.6.0_21";
 my $entities = {};
 my $reg;
@@ -116,7 +117,7 @@ POE::Component::Client::TCP->new(
     send_keepalive => sub {
       debug(32,"sending keepalive");
       $pm->{0x00}->{sent}++;
-      if($_[HEAP]->{server})
+      if($alive && $_[HEAP]->{server})
       {
         $_[HEAP]->{server}->put( mcByte(0) );
         $_[KERNEL]->delay('send_keepalive',1);
@@ -402,7 +403,7 @@ sub named_entity_spawn
   my $heap = shift;
   my @args = @_;
   #print STDERR Dumper(@args); exit;
-  if($args[3] eq 'Vaevictus')
+  if($args[3] eq $config->{owner})
   {
     $ai->{'target'} = $args[2];
     $ai->{'X'} = $args[4]/32;
@@ -426,9 +427,10 @@ sub chathandler
   #print STDERR Dumper(@args); exit;
   debug(2,'got chat: '.$args[2]); 
   my $line = $args[2];
-  if($line =~ m/^<Vaevictus>\s/)
+  my $owner = $config->{owner};
+  if($line =~ m/^<$owner>\s/)
   {
-    my ($cmd) = $line =~ m/^<Vaevictus>\s(.*)/;
+    my ($cmd) = $line =~ m/^<$owner>\s(.*)/;
     if($cmd eq "stop")
     {
       $ai->{target} = undef;
@@ -445,6 +447,7 @@ sub chathandler
     {
       sendpacket($kernel,$heap,0x03,(";_;"));
       sendpacket($kernel,$heap,0xFF,("QUIT"));
+      $alive = 0;
       $kernel->yield("shutdown");
     }
 
