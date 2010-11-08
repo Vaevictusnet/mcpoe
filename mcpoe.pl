@@ -46,7 +46,7 @@ my $serverkey='';
 my $pm;
 my $tickspeed= 0.1;
 my $software_version=12;
-my $protocol_version=2;
+my $protocol_version=3;
 my $movecount = 0;
 my $agent_header="Java/1.6.0_21";
 my $entities = {};
@@ -75,15 +75,7 @@ $reg->{'spawn_position'} = \&spawn_position;
 my $config=SMPConfig::get();
 load_protocol_data();
 initialize_protocol_counters();
-
-# 1 for skipping real auth (for testing)
-my $skip=0;
-if($skip) {
-  #@auth =  ('1282307029000', 'e4d430b888c622eb724b08f1621dbde5', 'Vaevictus', '6203936640708680972');
-  @auth =  ('1282307029000', 'e4d430b888c622eb724b08f1621dbde5', 'T♥tech', '6203936640708680972');
-} else {
-  master_auth();
-}
+master_auth();
 
 POE::Component::Client::TCP->new(
   RemoteAddress => $config->{host},
@@ -140,7 +132,8 @@ POE::Component::Client::TCP->new(
         mcByte(1), # 0x01 packet
         mcInt($protocol_version),  # protocol version 
         mcStr($auth[2]), # username
-        mcStr('Password') #password
+        mcStr('Password'), # password
+        mcLong(0),mcByte(0)
       );
       debug(2,'sent login');
     },
@@ -921,7 +914,7 @@ sub load_protocol_data
       type=>"keepalive",
     },
     0x01 => {
-      format => "iSS",
+      format => "iSSlb",
       #delay => { name => "shutdown", value => "10" },
       type => "login",
     },
