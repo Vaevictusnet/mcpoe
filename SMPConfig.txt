@@ -1,0 +1,16 @@
+#!/usr/bin/perl -w
+
+use strict;
+package SMPConfig;
+
+sub get
+{
+  return {
+    username => 'User',
+    password => 'Pass',
+    host => 'localhost',
+    port => 25565
+  };
+}
+
+1;
