@@ -46,7 +46,7 @@ my $serverkey='';
 my $pm;
 my $tickspeed= 0.1;
 my $software_version=12;
-my $protocol_version=3;
+my $protocol_version=4;
 my $movecount = 0;
 my $alive = 1;
 my $agent_header="Java/1.6.0_21";
@@ -946,6 +946,10 @@ sub load_protocol_data
       format=>"iii",
       post=>"spawn_position",
     },
+    0x07=>{
+      type=>"use entity?",
+      format=>"ii",
+    },
     0x0a=>{
       type=>"onground", # unknown...
       format=>"b"
@@ -1005,6 +1009,10 @@ sub load_protocol_data
       type=>'mob spawn',
       format=>'ibiiibb',
     },
+    0x1c=>{
+      type=>'entity velocity?',
+      format=>'isss',
+    },
     0x1d=>{
       type=>'destroy entity',
       format=>'i',
@@ -1031,6 +1039,10 @@ sub load_protocol_data
       type=>'entity teleport',
       format=>'iiiibb',
       post=>'entity_teleport',
+    },
+    0x27=>{
+      type=>'attach entity?',
+      format=>'ii',
     },
     0x32=>{
       type=>'pre-chunk',
