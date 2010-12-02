@@ -46,7 +46,7 @@ my $serverkey='';
 my $pm;
 my $tickspeed= 0.1;
 my $software_version=12;
-my $protocol_version=4;
+my $protocol_version=6;
 my $movecount = 0;
 my $alive = 1;
 my $agent_header="Java/1.6.0_21";
@@ -492,6 +492,19 @@ sub colorize
 }
 sub byteparser
 {
+  # formula options:
+  # bsSiIlfdMTX
+  # b byte
+  # s short
+  # S string (also short + byte array )
+  # i int
+  # I Map Chunk 0x33 (int + byte array)
+  # l long
+  # f float
+  # d double
+  # M Multi Block Change 0x34
+  # T Explosion 0x3c (int + 3 byte arrays)
+  # X Inventory 0x05
   my ($kernel, $heap) = @_;
   my $cont = 1;
 
@@ -586,7 +599,8 @@ sub byteparser
         $p_size += 8;
         return unless length($buf) >= $p_size;
       }
-      elsif($unit eq 'X')
+
+      elsif($unit eq 'I')
       {
         unless( length($buf) >= $p_size + 4) { debug(4,'failed chunk 1'); return; }
         debug(4,"string pos: ($p_size)");
@@ -598,7 +612,22 @@ sub byteparser
         debug(16,split(//,$buf));
         unless( length($buf) >= $p_size) { debug(4,'failed chunk 2'); return; }
       }
-      elsif($unit eq 'I')
+      elsif($unit eq 'T')
+      {
+        # T for 0x3c explosion... one int. 3 bytes per int value
+        unless( length($buf) >= $p_size + 4) { debug(4,'failed chunk 1'); return; }
+        debug(4,"string pos: ($p_size)");
+        my $strsz = unpack("\@$p_size N",$buf);
+        $p_size += 4;  # 2
+        $p_size += $strsz;
+        $p_size += $strsz;
+        $p_size += $strsz;
+        $formula .= "N". "a$strsz" ."a$strsz"."a$strsz";
+        debug(4,"string size: ($strsz)");
+        debug(16,split(//,$buf));
+        unless( length($buf) >= $p_size) { debug(4,'failed chunk 2'); return; }
+      }
+      elsif($unit eq 'X')
       {
         # short (length) of
         # { short [byte short] }
@@ -939,7 +968,7 @@ sub load_protocol_data
     },
     0x05=>{
       type=>"update inventory",
-      format=>"iI",
+      format=>"iX",
     },
     0x06=>{
       type=>"spawn position",
@@ -948,7 +977,15 @@ sub load_protocol_data
     },
     0x07=>{
       type=>"use entity?",
-      format=>"ii",
+      format=>"iib",
+    },
+    0x08=>{
+      type=>"update health",
+      format=>"b",
+    },
+    0x09=>{
+      type=>"respawn",
+      format=>"",
     },
     0x0a=>{
       type=>"onground", # unknown...
@@ -1040,6 +1077,10 @@ sub load_protocol_data
       format=>'iiiibb',
       post=>'entity_teleport',
     },
+    0x26=>{
+      type=>'Entity Death',
+      format=>'ib',
+    },
     0x27=>{
       type=>'attach entity?',
       format=>'ii',
@@ -1050,7 +1091,7 @@ sub load_protocol_data
     },
     0x33=>{
       type=>'map chunk',
-      format=>'isibbbX',
+      format=>'isibbbI',
       post => 'startaimove',
     },
     0x34=>{
@@ -1064,6 +1105,10 @@ sub load_protocol_data
     0x3b=>{
       type=>'chest/sign',
       format=>'isiS',
+    },
+    0x3c=>{
+      type=>'Explosion',
+      format=>'dddfE',
     },
     0xff=>{
       type=>'client disconnect',
